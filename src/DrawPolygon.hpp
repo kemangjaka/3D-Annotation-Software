@@ -18,19 +18,21 @@ public:
 	int width;
 	int height;
 
-	PolygonDrawer(const std::string window_name, cv::Mat img, int w_width, int w_height) {
+	PolygonDrawer(const std::string window_name, int w_width, int w_height) {
 		WORKING_LINE_COLOR = (255, 0, 0);
 		FINAL_LINE_COLOR = (0, 255, 0);
 		window_name_ = window_name;
 		done_ = false;
 		l_pushed = false;
 		current_ = cv::Point(0, 0); // Current position, so we can draw the line-in-progress
-		imgPtr.reset(new cv::Mat(img));
 		width = w_width;
 		height = w_height;
-
 	}
 
+	void loadImage(cv::Mat img)
+	{
+		imgPtr.reset(new cv::Mat(img));
+	}
 	static void onMouse(int event, int x, int y, int f, void* data) {
 		PolygonDrawer *curobj = reinterpret_cast<PolygonDrawer*>(data);
 		if (curobj->done_) // Nothing more to do
@@ -57,7 +59,7 @@ public:
 		}
 	}
 
-	int run() {
+	bool run() {
 		cv::namedWindow(window_name_);
 		cv::resizeWindow(window_name_, height, width);
 		cv::setMouseCallback(window_name_, onMouse, this);
@@ -73,11 +75,18 @@ public:
 				int npts = cv::Mat(points_).rows;
 				cv::polylines(img, &pts, &npts, 1, false, cv::Scalar(255, 0, 0));
 				cv::line(img, points_[points_.size() - 1], current_, cv::Scalar(0, 255, 0), 2.0);
+				cv::Mat img2;
+				imgPtr->copyTo(img2);
+				//cv::fillPoly(img, &pts, &npts, 1, cv::Scalar(255, 0, 255));
+				cv::fillConvexPoly(img2, pts, npts, cv::Scalar(255, 0, 255));
+				img = 0.5 * img + 0.5 * img2;
 			}
 			cv::imshow(window_name_, img);
 			//cv::waitKey(1);
 			if (cv::waitKey(1) == VK_SPACE)
 				done_ = true;
+			else if (cv::waitKey(1) == VK_ESCAPE)
+				return false;
 		}
 		const cv::Point *pts = (const cv::Point*) cv::Mat(points_).data;
 		int npts = cv::Mat(points_).rows;
@@ -88,19 +97,19 @@ public:
 			imgPtr->copyTo(img);
 			cv::Mat img2;
 			imgPtr->copyTo(img2);
-			//cv::fillPoly(img, &pts, &npts, 1, cv::Scalar(255, 0, 255));
-			cv::fillConvexPoly(img, pts, npts, cv::Scalar(255, 0, 255));
+			cv::fillConvexPoly(img, pts, npts, cv::Scalar(0, 0, 255));
 			cv::Mat show_img = 0.3 * img + 0.7 * img2;
 			cv::imshow(window_name_, show_img);
 			if (cv::waitKey() == VK_SPACE)
 			{
 				cv::destroyWindow(window_name_);
-				return 1;
+				return true;
 			}
 			else if (cv::waitKey() == VK_ESCAPE)
 			{
+				points_.clear();
 				cv::destroyWindow(window_name_);
-				return 0;
+				return false;
 			}
 		}
 	}
@@ -122,6 +131,21 @@ public:
 					data.push_back(cv::Point(n, m));
 
 		return data;
+	}
+
+	cv::Mat getMaskImage()
+	{
+		vector<cv::Point> data;
+
+		const cv::Point *pts = (const cv::Point*) cv::Mat(points_).data;
+		int npts = cv::Mat(points_).rows;
+		cout << npts << endl;
+		cv::Mat img;
+		imgPtr->copyTo(img);
+		//cv::fillPoly(img, &pts, &npts, 1, cv::Scalar(0, 0, 0));
+		cv::fillConvexPoly(img, pts, npts, cv::Scalar(0, 0, 0));
+
+		return img;
 	}
 
 };

@@ -6,7 +6,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/kdtree/impl/kdtree_flann.hpp>
-
+#include <pcl/common/centroid.h>
 #include <vtkWindowToImageFilter.h>
 #include <vtkPolyDataMapper.h>
 #include <vtkRenderWindow.h>
@@ -19,6 +19,7 @@
 #include <sstream>
 #include <iterator>
 #include <direct.h>
+#include <future>
 #include <opencv2/opencv.hpp>
 
 using namespace std;
